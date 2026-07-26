@@ -5,6 +5,7 @@ import '../models/ppp_system_model.dart';
 import 'lighting_view.dart';
 import 'devices_view.dart';
 import 'automations_view.dart';
+import 'three_d_interactive_view.dart';
 import 'ppp_connection_dialog.dart';
 import 'esp32_provisioning_dialog.dart';
 import 'login_screen.dart';
@@ -19,7 +20,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _activeTab = 0; // 0 = Lighting, 1 = Appliances, 2 = Automations
+  int _activeTab = 0; // 0 = Lighting, 1 = Appliances, 2 = Automations, 3 = 3D Studio
 
   final List<String> _rooms = [
     'All Rooms',
@@ -105,6 +106,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
+                ),
+
+                // 3D Interactive Mode Toggle Button
+                IconButton(
+                  tooltip: isAr ? 'تحكم 3D التفاعلي' : '3D Object Studio',
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _activeTab == 3
+                          ? AppTheme.primaryGlow
+                          : AppTheme.primary.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.primary.withValues(alpha: 0.4)),
+                    ),
+                    child: Icon(
+                      Icons.view_in_ar_rounded,
+                      color: _activeTab == 3 ? Colors.black : AppTheme.primaryGlow,
+                      size: 18,
+                    ),
+                  ),
+                  onPressed: () => setState(() => _activeTab = _activeTab == 3 ? 0 : 3),
                 ),
 
                 // ESP32 Provisioning Button
@@ -274,7 +296,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
 
-              // Room Selector Tabs (only shown on Lighting or Devices tab)
+              // Room Selector Tabs (only shown on Lighting, Devices or 3D tab)
               if (_activeTab != 2)
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -307,7 +329,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
 
-              // Body Content (Lighting, Appliances, or Automations)
+              // Body Content (Lighting, Appliances, Automations, or 3D Interactive Studio)
               Expanded(
                 child: IndexedStack(
                   index: _activeTab,
@@ -315,20 +337,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     LightingView(controller: widget.controller),
                     DevicesView(controller: widget.controller),
                     AutomationsView(controller: widget.controller),
+                    ThreeDInteractiveView(controller: widget.controller),
                   ],
                 ),
               ),
             ],
           ),
 
-          // Bottom Navigation Bar with 3 Tabs
+          // Bottom Navigation Bar
           bottomNavigationBar: Container(
             decoration: const BoxDecoration(
               color: AppTheme.surfaceDark,
               border: Border(top: BorderSide(color: AppTheme.borderDark)),
             ),
             child: BottomNavigationBar(
-              currentIndex: _activeTab,
+              currentIndex: _activeTab > 2 ? 0 : _activeTab,
               onTap: (index) => setState(() => _activeTab = index),
               backgroundColor: AppTheme.surfaceDark,
               selectedItemColor: isRemote ? AppTheme.accentPurple : AppTheme.primary,
