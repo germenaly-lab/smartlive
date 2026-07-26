@@ -4,6 +4,7 @@ import '../services/smart_home_controller.dart';
 import '../models/ppp_system_model.dart';
 import 'lighting_view.dart';
 import 'devices_view.dart';
+import 'automations_view.dart';
 import 'ppp_connection_dialog.dart';
 import 'esp32_provisioning_dialog.dart';
 import 'login_screen.dart';
@@ -18,7 +19,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _activeTab = 0; // 0 = Lighting, 1 = Appliances
+  int _activeTab = 0; // 0 = Lighting, 1 = Appliances, 2 = Automations
 
   final List<String> _rooms = [
     'All Rooms',
@@ -273,52 +274,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
 
-              // Room Selector Tabs
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                child: Row(
-                  children: _rooms.map((roomKey) {
-                    final isSelected = widget.controller.selectedRoom == roomKey;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: FilterChip(
-                        selected: isSelected,
-                        label: Text(widget.controller.getLocalizedRoom(roomKey)),
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : AppTheme.textSecondary,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 13,
-                        ),
-                        selectedColor: isRemote ? AppTheme.accentPurple : AppTheme.primary,
-                        backgroundColor: AppTheme.surfaceDark,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: BorderSide(
-                            color: isSelected ? (isRemote ? AppTheme.accentPurple : AppTheme.primary) : AppTheme.borderDark,
+              // Room Selector Tabs (only shown on Lighting or Devices tab)
+              if (_activeTab != 2)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                  child: Row(
+                    children: _rooms.map((roomKey) {
+                      final isSelected = widget.controller.selectedRoom == roomKey;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FilterChip(
+                          selected: isSelected,
+                          label: Text(widget.controller.getLocalizedRoom(roomKey)),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : AppTheme.textSecondary,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 13,
                           ),
+                          selectedColor: isRemote ? AppTheme.accentPurple : AppTheme.primary,
+                          backgroundColor: AppTheme.surfaceDark,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                              color: isSelected ? (isRemote ? AppTheme.accentPurple : AppTheme.primary) : AppTheme.borderDark,
+                            ),
+                          ),
+                          onSelected: (_) => widget.controller.setSelectedRoom(roomKey),
                         ),
-                        onSelected: (_) => widget.controller.setSelectedRoom(roomKey),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
 
-              // Body Content (Lighting or Appliances)
+              // Body Content (Lighting, Appliances, or Automations)
               Expanded(
                 child: IndexedStack(
                   index: _activeTab,
                   children: [
                     LightingView(controller: widget.controller),
                     DevicesView(controller: widget.controller),
+                    AutomationsView(controller: widget.controller),
                   ],
                 ),
               ),
             ],
           ),
 
-          // Bottom Navigation Bar
+          // Bottom Navigation Bar with 3 Tabs
           bottomNavigationBar: Container(
             decoration: const BoxDecoration(
               color: AppTheme.surfaceDark,
@@ -341,6 +344,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   icon: const Icon(Icons.tune_rounded),
                   activeIcon: Icon(Icons.tune_rounded, color: isRemote ? AppTheme.accentPurple : AppTheme.primary),
                   label: tr('appliances_climate'),
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  activeIcon: Icon(Icons.auto_awesome_rounded, color: isRemote ? AppTheme.accentPurple : AppTheme.primary),
+                  label: tr('automations_routines'),
                 ),
               ],
             ),

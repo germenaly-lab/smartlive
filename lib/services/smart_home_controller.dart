@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import '../models/ppp_system_model.dart';
 import '../models/device_model.dart';
+import '../models/automation_model.dart';
 import '../l10n/app_translations.dart';
 
 class SmartHomeController extends ChangeNotifier {
@@ -228,6 +229,215 @@ class SmartHomeController extends ChangeNotifier {
 
   int get totalActiveDevices => _devices.where((d) => d.isOn).length;
 
+  // --- Automations & Daily Routines State ---
+  final List<SmartAutomationModel> _automations = [
+    // 1-Tap Daily Routines
+    SmartAutomationModel(
+      id: 'routine_morning',
+      titleEn: 'Good Morning Routine',
+      titleAr: 'روتين صباح الخير',
+      descEn: 'Lights on 70%, AC set to 24°C, Curtains open 80%, Coffee plug ON',
+      descAr: 'تشغيل إضاءة غرفة النوم والمطبخ، التكييف 24°م، الستائر 80%، تشغيل القهوة',
+      icon: Icons.wb_sunny_rounded,
+      accentColor: const Color(0xFFF59E0B),
+      triggerType: TriggerType.schedule,
+      triggerTime: '07:00 AM',
+      isPreset: true,
+      actions: [
+        AutomationAction(deviceId: 'light_4', deviceName: 'Bedroom Light', setOn: true, setBrightness: 70.0),
+        AutomationAction(deviceId: 'light_5', deviceName: 'Kitchen Light', setOn: true, setBrightness: 80.0),
+        AutomationAction(deviceId: 'hvac_1', deviceName: 'AC Inverter', setOn: true, setValue: 24.0),
+        AutomationAction(deviceId: 'curtain_1', deviceName: 'Smart Blinds', setOn: true, setValue: 80.0),
+        AutomationAction(deviceId: 'plug_1', deviceName: 'Coffee Maker Plug', setOn: true),
+      ],
+    ),
+    SmartAutomationModel(
+      id: 'routine_away',
+      titleEn: 'Leaving Home Routine',
+      titleAr: 'روتين مغادرة المنزل',
+      descEn: 'Turn off all lights, Lock main door, AC to 26°C Eco, Coffee plug OFF',
+      descAr: 'إطفاء جميع الأنوار، إقفال الباب الرئيسي، التكييف 26°م اقتصادي',
+      icon: Icons.directions_run_rounded,
+      accentColor: const Color(0xFF10B981),
+      triggerType: TriggerType.schedule,
+      triggerTime: '08:30 AM',
+      isPreset: true,
+      actions: [
+        AutomationAction(deviceId: 'light_1', deviceName: 'All Lights', setOn: false),
+        AutomationAction(deviceId: 'lock_1', deviceName: 'Main Lock', setOn: true), // locked
+        AutomationAction(deviceId: 'hvac_1', deviceName: 'AC Inverter', setOn: true, setValue: 26.0),
+        AutomationAction(deviceId: 'plug_1', deviceName: 'Coffee Plug', setOn: false),
+      ],
+    ),
+    SmartAutomationModel(
+      id: 'routine_sleep',
+      titleEn: 'Good Night Sleep',
+      titleAr: 'روتين تصبح على خير',
+      descEn: 'Turn off living room/kitchen lights, dim reading lamp to 15%, lock door',
+      descAr: 'إطفاء أنوار الصالة، تخفيض إضاءة القراءة 15%، قفل الباب الرئيسي',
+      icon: Icons.bedtime_rounded,
+      accentColor: const Color(0xFFA855F7),
+      triggerType: TriggerType.schedule,
+      triggerTime: '11:00 PM',
+      isPreset: true,
+      actions: [
+        AutomationAction(deviceId: 'light_1', deviceName: 'Living Room Light', setOn: false),
+        AutomationAction(deviceId: 'light_3', deviceName: 'Reading Lamp', setOn: true, setBrightness: 15.0),
+        AutomationAction(deviceId: 'lock_1', deviceName: 'Main Lock', setOn: true),
+        AutomationAction(deviceId: 'curtain_1', deviceName: 'Blinds', setOn: true, setValue: 0.0), // closed
+      ],
+    ),
+    SmartAutomationModel(
+      id: 'routine_cinema',
+      titleEn: 'Movie & Cinema Mode',
+      titleAr: 'وضع وقت السينما',
+      descEn: 'Dim wall strip to 20% indigo, turn on 4K TV, volume 40%, close blinds',
+      descAr: 'تخفيض الإضاءة للون الأزرق 20%، تشغيل التلفاز، إغلاق الستائر 100%',
+      icon: Icons.movie_rounded,
+      accentColor: const Color(0xFF3B82F6),
+      triggerType: TriggerType.schedule,
+      triggerTime: '09:00 PM',
+      isPreset: true,
+      actions: [
+        AutomationAction(deviceId: 'light_2', deviceName: 'LED Wall Strip', setOn: true, setBrightness: 20.0, setColor: const Color(0xFF6366F1)),
+        AutomationAction(deviceId: 'tv_1', deviceName: 'Cinema TV', setOn: true, setValue: 40.0),
+        AutomationAction(deviceId: 'curtain_1', deviceName: 'Blinds', setOn: true, setValue: 0.0),
+      ],
+    ),
+
+    // Customizable Scheduled Automations
+    SmartAutomationModel(
+      id: 'auto_sunset_lights',
+      titleEn: 'Auto Sunset Porch Lights',
+      titleAr: 'تشغيل إضاءة المدخل عند الغروب',
+      descEn: 'Automatically turns on wall strip and chandelier at sunset (06:45 PM)',
+      descAr: 'تشغيل تلقائي لإضاءة المدخل والجدار عند غروب الشمس (06:45 م)',
+      icon: Icons.wb_twilight_rounded,
+      accentColor: const Color(0xFFF43F5E),
+      triggerType: TriggerType.schedule,
+      triggerTime: '06:45 PM',
+      isPreset: false,
+      actions: [
+        AutomationAction(deviceId: 'light_1', deviceName: 'Chandelier', setOn: true, setBrightness: 80.0),
+        AutomationAction(deviceId: 'light_2', deviceName: 'Wall Strip', setOn: true, setBrightness: 60.0),
+      ],
+    ),
+    SmartAutomationModel(
+      id: 'auto_temp_cool',
+      titleEn: 'Smart Climate Temperature Protection',
+      titleAr: 'حماية التكييف عند ارتفاع الحرارة',
+      descEn: 'Triggers Living Room AC when room temperature exceeds 25°C',
+      descAr: 'تشغيل التكييف تلقائياً عندما تتجاوز حرارة الغرفة 25 درجة مئوية',
+      icon: Icons.thermostat_rounded,
+      accentColor: const Color(0xFF3B82F6),
+      triggerType: TriggerType.sensor,
+      triggerTime: 'Temp > 25°C',
+      isPreset: false,
+      actions: [
+        AutomationAction(deviceId: 'hvac_1', deviceName: 'Inverter AC', setOn: true, setValue: 22.0),
+      ],
+    ),
+  ];
+
+  List<SmartAutomationModel> get automations => _automations;
+  List<SmartAutomationModel> get presetRoutines => _automations.where((a) => a.isPreset).toList();
+  List<SmartAutomationModel> get customAutomations => _automations.where((a) => !a.isPreset).toList();
+
+  void toggleAutomationActive(String id) {
+    final index = _automations.indexWhere((a) => a.id == id);
+    if (index != -1) {
+      _automations[index] = _automations[index].copyWith(isActive: !_automations[index].isActive);
+      notifyListeners();
+    }
+  }
+
+  void addCustomAutomation(SmartAutomationModel automation) {
+    _automations.add(automation);
+    notifyListeners();
+  }
+
+  void executeAutomation(String id) {
+    final automation = _automations.firstWhere((a) => a.id == id, orElse: () => _automations.first);
+    for (var action in automation.actions) {
+      final index = _devices.indexWhere((d) => d.id == action.deviceId);
+      if (index != -1) {
+        var updated = _devices[index].copyWith(isOn: action.setOn);
+        if (action.setBrightness != null) {
+          updated = updated.copyWith(brightness: action.setBrightness);
+        }
+        if (action.setColor != null) {
+          updated = updated.copyWith(color: action.setColor);
+        }
+        if (action.setValue != null) {
+          updated = updated.copyWith(value: action.setValue);
+        }
+        _devices[index] = updated;
+      } else if (action.deviceId == 'light_1' && !action.setOn) {
+        turnOffAllLights();
+      }
+    }
+    notifyListeners();
+  }
+
+  // --- Preset Scenes ---
+  void applyScene(String sceneName) {
+    switch (sceneName) {
+      case 'Relax':
+      case 'استرخاء':
+        _devices = _devices.map((d) {
+          if (d.type == DeviceType.light) {
+            return d.copyWith(
+              isOn: true,
+              brightness: 45.0,
+              color: const Color(0xFFF59E0B),
+            );
+          }
+          return d;
+        }).toList();
+        break;
+      case 'Focus':
+      case 'تركيز':
+        _devices = _devices.map((d) {
+          if (d.type == DeviceType.light) {
+            return d.copyWith(
+              isOn: true,
+              brightness: 95.0,
+              color: const Color(0xFF3B82F6),
+            );
+          }
+          return d;
+        }).toList();
+        break;
+      case 'Party Glow':
+      case 'حفلة':
+        _devices = _devices.map((d) {
+          if (d.type == DeviceType.light) {
+            return d.copyWith(
+              isOn: true,
+              brightness: 100.0,
+              color: const Color(0xFFE11D48),
+            );
+          }
+          return d;
+        }).toList();
+        break;
+      case 'Night Ambient':
+      case 'أجواء ليلية':
+        _devices = _devices.map((d) {
+          if (d.type == DeviceType.light) {
+            return d.copyWith(
+              isOn: d.room == 'Bedroom',
+              brightness: 20.0,
+              color: const Color(0xFFA855F7),
+            );
+          }
+          return d;
+        }).toList();
+        break;
+    }
+    notifyListeners();
+  }
+
   Timer? _telemetryTimer;
 
   SmartHomeController() {
@@ -439,65 +649,6 @@ class SmartHomeController extends ChangeNotifier {
       }
       return d;
     }).toList();
-    notifyListeners();
-  }
-
-  // --- Preset Scenes ---
-  void applyScene(String sceneName) {
-    switch (sceneName) {
-      case 'Relax':
-      case 'استرخاء':
-        _devices = _devices.map((d) {
-          if (d.type == DeviceType.light) {
-            return d.copyWith(
-              isOn: true,
-              brightness: 45.0,
-              color: const Color(0xFFF59E0B),
-            );
-          }
-          return d;
-        }).toList();
-        break;
-      case 'Focus':
-      case 'تركيز':
-        _devices = _devices.map((d) {
-          if (d.type == DeviceType.light) {
-            return d.copyWith(
-              isOn: true,
-              brightness: 95.0,
-              color: const Color(0xFF3B82F6),
-            );
-          }
-          return d;
-        }).toList();
-        break;
-      case 'Party Glow':
-      case 'حفلة':
-        _devices = _devices.map((d) {
-          if (d.type == DeviceType.light) {
-            return d.copyWith(
-              isOn: true,
-              brightness: 100.0,
-              color: const Color(0xFFE11D48),
-            );
-          }
-          return d;
-        }).toList();
-        break;
-      case 'Night Ambient':
-      case 'أجواء ليلية':
-        _devices = _devices.map((d) {
-          if (d.type == DeviceType.light) {
-            return d.copyWith(
-              isOn: d.room == 'Bedroom',
-              brightness: 20.0,
-              color: const Color(0xFFA855F7),
-            );
-          }
-          return d;
-        }).toList();
-        break;
-    }
     notifyListeners();
   }
 }
