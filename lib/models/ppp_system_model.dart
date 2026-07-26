@@ -1,4 +1,5 @@
 enum ConnectionStatus { connected, connecting, disconnected, error }
+enum NetworkAccessMode { local, remote }
 
 class PppSystemConfig {
   final String ipAddress;
@@ -6,6 +7,9 @@ class PppSystemConfig {
   final String gatewayName;
   final String apiKey;
   final ConnectionStatus status;
+  final NetworkAccessMode mode; // local (Home Wi-Fi) or remote (Traveling / 5G Cloud)
+  final String cloudEndpoint; // Secure Remote Cloud Relay URL
+  final bool isEncryptedTls;
   final int latencyMs;
   final double cpuUsage;
   final double memoryUsage;
@@ -18,11 +22,14 @@ class PppSystemConfig {
     required this.gatewayName,
     required this.apiKey,
     this.status = ConnectionStatus.connected,
+    this.mode = NetworkAccessMode.local,
+    this.cloudEndpoint = 'wss://remote.pppsystem.io/v3/gateway',
+    this.isEncryptedTls = true,
     this.latencyMs = 14,
-    this.cpuUsage = 18.5,
-    this.memoryUsage = 42.0,
-    this.activeNodesCount = 12,
-    this.protocol = 'WebSocket / MQTT',
+    this.cpuUsage = 19.2,
+    this.memoryUsage = 41.5,
+    this.activeNodesCount = 14,
+    this.protocol = 'WebSocket / MQTT (TLS)',
   });
 
   PppSystemConfig copyWith({
@@ -31,6 +38,9 @@ class PppSystemConfig {
     String? gatewayName,
     String? apiKey,
     ConnectionStatus? status,
+    NetworkAccessMode? mode,
+    String? cloudEndpoint,
+    bool? isEncryptedTls,
     int? latencyMs,
     double? cpuUsage,
     double? memoryUsage,
@@ -43,6 +53,9 @@ class PppSystemConfig {
       gatewayName: gatewayName ?? this.gatewayName,
       apiKey: apiKey ?? this.apiKey,
       status: status ?? this.status,
+      mode: mode ?? this.mode,
+      cloudEndpoint: cloudEndpoint ?? this.cloudEndpoint,
+      isEncryptedTls: isEncryptedTls ?? this.isEncryptedTls,
       latencyMs: latencyMs ?? this.latencyMs,
       cpuUsage: cpuUsage ?? this.cpuUsage,
       memoryUsage: memoryUsage ?? this.memoryUsage,

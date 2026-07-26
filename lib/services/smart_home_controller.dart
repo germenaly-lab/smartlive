@@ -37,20 +37,42 @@ class SmartHomeController extends ChangeNotifier {
   bool get isAuthLoading => _isAuthLoading;
   bool get isLoggedIn => _currentUser.isLoggedIn;
 
-  // --- PPP System Connection State ---
+  // --- PPP System Connection State (Local & Remote Travel Mode) ---
   PppSystemConfig _pppConfig = PppSystemConfig(
     ipAddress: '192.168.1.120',
     port: 8080,
     gatewayName: 'PPP-Gateway-Hub-V3',
     apiKey: 'ppp_sec_9942a8b27c1f',
     status: ConnectionStatus.connected,
+    mode: NetworkAccessMode.local,
+    cloudEndpoint: 'wss://remote.pppsystem.io/v3/gateway',
+    isEncryptedTls: true,
     latencyMs: 14,
     cpuUsage: 19.2,
     memoryUsage: 41.5,
     activeNodesCount: 14,
+    protocol: 'WebSocket / MQTT (TLS)',
   );
 
   PppSystemConfig get pppConfig => _pppConfig;
+  bool get isRemoteMode => _pppConfig.mode == NetworkAccessMode.remote;
+
+  void toggleNetworkAccessMode() {
+    if (_pppConfig.mode == NetworkAccessMode.local) {
+      _pppConfig = _pppConfig.copyWith(
+        mode: NetworkAccessMode.remote,
+        latencyMs: 42,
+        protocol: 'PPP Cloud Relay (TLS 1.3)',
+      );
+    } else {
+      _pppConfig = _pppConfig.copyWith(
+        mode: NetworkAccessMode.local,
+        latencyMs: 14,
+        protocol: 'WebSocket / MQTT (Local)',
+      );
+    }
+    notifyListeners();
+  }
 
   // --- Filter State ---
   String _selectedRoom = 'All Rooms';
@@ -212,8 +234,9 @@ class SmartHomeController extends ChangeNotifier {
     // Start background telemetry simulation for PPP system
     _telemetryTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       if (_pppConfig.status == ConnectionStatus.connected) {
+        final baseLatency = isRemoteMode ? 40 : 12;
         _pppConfig = _pppConfig.copyWith(
-          latencyMs: 12 + (DateTime.now().second % 6),
+          latencyMs: baseLatency + (DateTime.now().second % 6),
           cpuUsage: 16.0 + (DateTime.now().second % 8),
         );
         notifyListeners();
@@ -321,6 +344,8 @@ class SmartHomeController extends ChangeNotifier {
     required int port,
     required String gateway,
     required String apiKey,
+    required String cloudEndpoint,
+    required NetworkAccessMode mode,
   }) async {
     _pppConfig = _pppConfig.copyWith(status: ConnectionStatus.connecting);
     notifyListeners();
@@ -332,8 +357,10 @@ class SmartHomeController extends ChangeNotifier {
       port: port,
       gatewayName: gateway,
       apiKey: apiKey,
+      cloudEndpoint: cloudEndpoint,
+      mode: mode,
       status: ConnectionStatus.connected,
-      latencyMs: 11,
+      latencyMs: mode == NetworkAccessMode.remote ? 42 : 11,
     );
     notifyListeners();
     return true;

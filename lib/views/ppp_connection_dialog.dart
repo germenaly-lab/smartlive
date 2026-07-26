@@ -17,6 +17,8 @@ class _PppConnectionDialogState extends State<PppConnectionDialog> {
   late TextEditingController _portController;
   late TextEditingController _gatewayController;
   late TextEditingController _keyController;
+  late TextEditingController _cloudController;
+  late NetworkAccessMode _selectedMode;
   bool _isTesting = false;
 
   @override
@@ -27,6 +29,8 @@ class _PppConnectionDialogState extends State<PppConnectionDialog> {
     _portController = TextEditingController(text: config.port.toString());
     _gatewayController = TextEditingController(text: config.gatewayName);
     _keyController = TextEditingController(text: config.apiKey);
+    _cloudController = TextEditingController(text: config.cloudEndpoint);
+    _selectedMode = config.mode;
   }
 
   @override
@@ -35,6 +39,7 @@ class _PppConnectionDialogState extends State<PppConnectionDialog> {
     _portController.dispose();
     _gatewayController.dispose();
     _keyController.dispose();
+    _cloudController.dispose();
     super.dispose();
   }
 
@@ -62,7 +67,11 @@ class _PppConnectionDialogState extends State<PppConnectionDialog> {
                       color: AppTheme.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(Icons.router_rounded, color: AppTheme.primary, size: 28),
+                    child: Icon(
+                      _selectedMode == NetworkAccessMode.remote ? Icons.public_rounded : Icons.router_rounded,
+                      color: _selectedMode == NetworkAccessMode.remote ? AppTheme.accentPurple : AppTheme.primary,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -78,8 +87,14 @@ class _PppConnectionDialogState extends State<PppConnectionDialog> {
                           ),
                         ),
                         Text(
-                          tr('ppp_protocol_desc'),
-                          style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                          _selectedMode == NetworkAccessMode.remote
+                              ? tr('mode_remote')
+                              : tr('mode_local'),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: _selectedMode == NetworkAccessMode.remote ? AppTheme.accentPurple : AppTheme.primaryGlow,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -90,9 +105,100 @@ class _PppConnectionDialogState extends State<PppConnectionDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // Status Summary
+              // Network Access Mode Selector (Local vs Traveling Mode)
+              Text(
+                tr('connection_mode'),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.cardDark,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.borderDark),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedMode = NetworkAccessMode.local),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _selectedMode == NetworkAccessMode.local ? AppTheme.primary : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.home_rounded, size: 16, color: Colors.white),
+                              const SizedBox(width: 6),
+                              Text(
+                                tr('mode_local'),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedMode = NetworkAccessMode.remote),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _selectedMode == NetworkAccessMode.remote ? AppTheme.accentPurple : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.flight_takeoff_rounded, size: 16, color: Colors.white),
+                              const SizedBox(width: 6),
+                              Text(
+                                tr('mode_remote'),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Traveling Mode Banner / Info
+              if (_selectedMode == NetworkAccessMode.remote)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentPurple.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.accentPurple.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.security_rounded, color: AppTheme.accentPurple, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          tr('traveling_mode_desc'),
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textPrimary, height: 1.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              const SizedBox(height: 16),
+
+              // Status Summary Card
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -107,14 +213,10 @@ class _PppConnectionDialogState extends State<PppConnectionDialog> {
                       height: 12,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: config.status == ConnectionStatus.connected
-                            ? AppTheme.accentGreen
-                            : Colors.redAccent,
+                        color: config.status == ConnectionStatus.connected ? AppTheme.accentGreen : Colors.redAccent,
                         boxShadow: [
                           BoxShadow(
-                            color: (config.status == ConnectionStatus.connected
-                                    ? AppTheme.accentGreen
-                                    : Colors.redAccent)
+                            color: (config.status == ConnectionStatus.connected ? AppTheme.accentGreen : Colors.redAccent)
                                 .withValues(alpha: 0.5),
                             blurRadius: 8,
                           ),
@@ -138,6 +240,10 @@ class _PppConnectionDialogState extends State<PppConnectionDialog> {
               ),
 
               const SizedBox(height: 20),
+              if (_selectedMode == NetworkAccessMode.remote) ...[
+                _buildTextField(tr('cloud_endpoint'), _cloudController, Icons.cloud_done_rounded),
+                const SizedBox(height: 14),
+              ],
               _buildTextField(tr('gateway_name'), _gatewayController, Icons.hub_rounded),
               const SizedBox(height: 14),
               Row(
@@ -189,7 +295,7 @@ class _PppConnectionDialogState extends State<PppConnectionDialog> {
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: AppTheme.primary,
+                        backgroundColor: _selectedMode == NetworkAccessMode.remote ? AppTheme.accentPurple : AppTheme.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       onPressed: _isTesting
@@ -201,6 +307,8 @@ class _PppConnectionDialogState extends State<PppConnectionDialog> {
                                 port: int.tryParse(_portController.text) ?? 8080,
                                 gateway: _gatewayController.text,
                                 apiKey: _keyController.text,
+                                cloudEndpoint: _cloudController.text,
+                                mode: _selectedMode,
                               );
                               setState(() => _isTesting = false);
                               if (context.mounted && success) {

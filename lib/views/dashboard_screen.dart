@@ -38,6 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (context, _) {
         final user = widget.controller.currentUser;
         final ppp = widget.controller.pppConfig;
+        final isRemote = widget.controller.isRemoteMode;
 
         return Scaffold(
           appBar: AppBar(
@@ -52,7 +53,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.primary, width: 2),
+                      border: Border.all(
+                        color: isRemote ? AppTheme.accentPurple : AppTheme.primary,
+                        width: 2,
+                      ),
                     ),
                     child: CircleAvatar(
                       radius: 20,
@@ -79,12 +83,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.g_mobiledata, color: AppTheme.accentGreen, size: 16),
+                          Icon(
+                            isRemote ? Icons.flight_takeoff_rounded : Icons.g_mobiledata,
+                            color: isRemote ? AppTheme.accentPurple : AppTheme.accentGreen,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              user.email,
+                              isRemote ? tr('mode_remote') : user.email,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isRemote ? FontWeight.bold : FontWeight.normal,
+                                color: isRemote ? AppTheme.accentPurple : AppTheme.textSecondary,
+                              ),
                             ),
                           ),
                         ],
@@ -135,7 +148,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onPressed: () => widget.controller.toggleLanguage(),
                 ),
 
-                // PPP Gateway Status Button
+                // PPP Gateway Status Button (Local vs Remote Pill)
                 InkWell(
                   onTap: () {
                     showDialog(
@@ -151,8 +164,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: ppp.status == ConnectionStatus.connected
-                            ? AppTheme.accentGreen.withValues(alpha: 0.4)
-                            : Colors.redAccent.withValues(alpha: 0.4),
+                            ? (isRemote ? AppTheme.accentPurple : AppTheme.accentGreen).withValues(alpha: 0.5)
+                            : Colors.redAccent.withValues(alpha: 0.5),
                       ),
                     ),
                     child: Row(
@@ -163,7 +176,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: ppp.status == ConnectionStatus.connected
-                                ? AppTheme.accentGreen
+                                ? (isRemote ? AppTheme.accentPurple : AppTheme.accentGreen)
                                 : Colors.redAccent,
                           ),
                         ),
@@ -172,7 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              tr('ppp_gateway'),
+                              isRemote ? 'Remote 5G' : tr('ppp_gateway'),
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -180,13 +193,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ),
                             Text(
-                              ppp.status == ConnectionStatus.connected
-                                  ? '${ppp.latencyMs}ms'
-                                  : tr('offline'),
+                              ppp.status == ConnectionStatus.connected ? '${ppp.latencyMs}ms' : tr('offline'),
                               style: TextStyle(
                                 fontSize: 10,
                                 color: ppp.status == ConnectionStatus.connected
-                                    ? AppTheme.accentGreen
+                                    ? (isRemote ? AppTheme.accentPurple : AppTheme.accentGreen)
                                     : Colors.redAccent,
                               ),
                             ),
@@ -201,6 +212,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           body: Column(
             children: [
+              // Traveling Mode Banner (if active)
+              if (isRemote)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: AppTheme.accentPurple.withValues(alpha: 0.2),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.flight_takeoff_rounded, color: AppTheme.accentPurple, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        tr('remote_active'),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               // System Telemetry Metrics
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
@@ -229,10 +263,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       Container(width: 1, height: 30, color: AppTheme.borderDark),
                       _buildMetricTile(
-                        Icons.speed_rounded,
-                        '${ppp.cpuUsage.toStringAsFixed(1)}%',
-                        tr('cpu_load'),
-                        AppTheme.accentAmber,
+                        isRemote ? Icons.cloud_done_rounded : Icons.speed_rounded,
+                        isRemote ? 'TLS 1.3' : '${ppp.cpuUsage.toStringAsFixed(1)}%',
+                        isRemote ? 'Cloud Tunnel' : tr('cpu_load'),
+                        isRemote ? AppTheme.accentPurple : AppTheme.accentAmber,
                       ),
                     ],
                   ),
@@ -256,12 +290,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           fontSize: 13,
                         ),
-                        selectedColor: AppTheme.primary,
+                        selectedColor: isRemote ? AppTheme.accentPurple : AppTheme.primary,
                         backgroundColor: AppTheme.surfaceDark,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                           side: BorderSide(
-                            color: isSelected ? AppTheme.primary : AppTheme.borderDark,
+                            color: isSelected ? (isRemote ? AppTheme.accentPurple : AppTheme.primary) : AppTheme.borderDark,
                           ),
                         ),
                         onSelected: (_) => widget.controller.setSelectedRoom(roomKey),
@@ -294,18 +328,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
               currentIndex: _activeTab,
               onTap: (index) => setState(() => _activeTab = index),
               backgroundColor: AppTheme.surfaceDark,
-              selectedItemColor: AppTheme.primary,
+              selectedItemColor: isRemote ? AppTheme.accentPurple : AppTheme.primary,
               unselectedItemColor: AppTheme.textSecondary,
               selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               items: [
                 BottomNavigationBarItem(
                   icon: const Icon(Icons.lightbulb_rounded),
-                  activeIcon: const Icon(Icons.lightbulb_rounded, color: AppTheme.primary),
+                  activeIcon: Icon(Icons.lightbulb_rounded, color: isRemote ? AppTheme.accentPurple : AppTheme.primary),
                   label: tr('lighting_hub'),
                 ),
                 BottomNavigationBarItem(
                   icon: const Icon(Icons.tune_rounded),
-                  activeIcon: const Icon(Icons.tune_rounded, color: AppTheme.primary),
+                  activeIcon: Icon(Icons.tune_rounded, color: isRemote ? AppTheme.accentPurple : AppTheme.primary),
                   label: tr('appliances_climate'),
                 ),
               ],
@@ -387,7 +421,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: const TextStyle(color: AppTheme.accentGreen, fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
+
+              // Remote Travel Mode Toggle
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  side: const BorderSide(color: AppTheme.accentPurple),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.controller.toggleNetworkAccessMode();
+                },
+                icon: const Icon(Icons.flight_takeoff_rounded, color: AppTheme.accentPurple),
+                label: Text(
+                  widget.controller.isRemoteMode ? tr('switch_to_local') : tr('switch_to_remote'),
+                  style: const TextStyle(color: AppTheme.accentPurple, fontWeight: FontWeight.bold),
+                ),
+              ),
+
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(

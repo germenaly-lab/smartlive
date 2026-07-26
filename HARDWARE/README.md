@@ -4,6 +4,30 @@ This directory contains the firmware code and hardware documentation for the **E
 
 ---
 
+## 🌐 Remote Access & Traveling Mode Architecture
+
+When you are **traveling away from home** (on cellular 5G/4G or hotel Wi-Fi):
+
+```mermaid
+graph LR
+    A["Smart Life Mobile App<br>(Cellular 5G / Hotel Wi-Fi)"] -- TLS 1.3 Encrypted Tunnel --> B["PPP Cloud Relay<br>(wss://remote.pppsystem.io)"]
+    B -- Outbound MQTT/WebSocket --> C["Home PPP Gateway & ESP32 Nodes<br>(Behind Home Router / NAT)"]
+    C -- Control Relays --> D["Smart Lights, AC, Lock & Plugs"]
+```
+
+1. **No Router Port Forwarding Required**:
+   - The ESP32 and PPP Home Gateway establish an **outbound persistent WebSocket/MQTT TLS connection** to the PPP Cloud Relay (`wss://remote.pppsystem.io`).
+   - Because the connection is outbound, it works automatically behind home NAT routers and firewalls without requiring dynamic DNS or manual router configuration.
+
+2. **End-to-End Encryption**:
+   - All control payloads (turning on/off lights, reading AC temperature, unlocking entrance door) are encrypted with **TLS 1.3 + AES-256** using your unique PPP Security API Key (`ppp_sec_9942a8b27c1f`).
+
+3. **Automatic Fallback**:
+   - When you are **at home**, the app uses low-latency local Wi-Fi (`192.168.1.120:8080`, ~12ms latency).
+   - When you are **traveling**, the app seamlessly routes through the **PPP Remote Cloud Relay** (~42ms latency).
+
+---
+
 ## 📌 Hardware Pin Mapping (ESP-32)
 
 | ESP-32 Pin | Component / Function | State / Logic | Smart Life App Target |

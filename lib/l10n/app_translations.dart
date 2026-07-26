@@ -61,6 +61,17 @@ class AppTranslations {
       'focus': 'Focus',
       'party_glow': 'Party Glow',
       'night_ambient': 'Night Ambient',
+      // Remote Control / Travel Mode Translations
+      'connection_mode': 'Connection Mode',
+      'mode_local': 'Home Wi-Fi (Local)',
+      'mode_remote': 'Remote Cloud (Traveling Mode)',
+      'traveling_mode_desc': 'Control your smart home securely from anywhere in the world over 5G/4G or remote Wi-Fi.',
+      'cloud_endpoint': 'Remote Cloud Tunnel URL',
+      'tls_encryption': 'End-to-End TLS Encryption',
+      'remote_active': 'Remote Cloud Relay Active',
+      'local_active': 'Local Wi-Fi Connection Active',
+      'switch_to_remote': 'Switch to Travel Mode (Remote)',
+      'switch_to_local': 'Switch to Home Wi-Fi (Local)',
     },
     'ar': {
       'app_name': 'سمارت لايف',
@@ -123,6 +134,17 @@ class AppTranslations {
       'focus': 'تركيز',
       'party_glow': 'حفلة',
       'night_ambient': 'أجواء ليلية',
+      // Remote Control / Travel Mode Translations
+      'connection_mode': 'وضع الاتصال',
+      'mode_local': 'شبكة المنزل (محلي)',
+      'mode_remote': 'السحابة البعيدة (وضع السفر)',
+      'traveling_mode_desc': 'تحكّم بمنزلك الذكي بأمان من أي مكان في العالم عبر شبكة 5G/4G أو الإنترنت الخارجي.',
+      'cloud_endpoint': 'رابط النفق السحابي البعيد',
+      'tls_encryption': 'التشفير الكامل TLS / SSL',
+      'remote_active': 'التتابع السحابي البعيد نشط',
+      'local_active': 'اتصال الواي فاي المحلي نشط',
+      'switch_to_remote': 'التحويل إلى وضع السفر (بعيد)',
+      'switch_to_local': 'التحويل إلى الواي فاي المحلي',
     },
   };
 
