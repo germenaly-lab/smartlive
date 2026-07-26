@@ -509,7 +509,7 @@ class SmartHomeController extends ChangeNotifier {
   }
 
   // --- Authentication Methods ---
-  Future<void> signInWithGoogle() async {
+  Future<bool> signInWithGoogle() async {
     _isAuthLoading = true;
     notifyListeners();
 
@@ -522,19 +522,26 @@ class SmartHomeController extends ChangeNotifier {
         photoUrl: account.photoUrl ?? 'https://i.pravatar.cc/150?img=12',
         isLoggedIn: true,
       );
-    } catch (e) {
-      // Fallback demo account for testing / desktop environment
-      _currentUser = UserModel(
-        id: 'google_user_ppp_1092',
-        name: isArabic ? 'علي أحمد' : 'Alex Johnson',
-        email: 'alex.johnson@gmail.com',
-        photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-        isLoggedIn: true,
-      );
-    } finally {
       _isAuthLoading = false;
       notifyListeners();
+      return true;
+    } catch (e) {
+      // If authenticating fails on physical iOS device, prompt or fallback explicitly
+      _isAuthLoading = false;
+      notifyListeners();
+      rethrow;
     }
+  }
+
+  void loginAsDemoUser() {
+    _currentUser = UserModel(
+      id: 'google_user_ppp_1092',
+      name: isArabic ? 'علي أحمد' : 'Alex Johnson',
+      email: 'alex.johnson@gmail.com',
+      photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      isLoggedIn: true,
+    );
+    notifyListeners();
   }
 
   Future<void> signOut() async {
