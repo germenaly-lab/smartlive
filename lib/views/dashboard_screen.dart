@@ -5,6 +5,7 @@ import '../models/ppp_system_model.dart';
 import 'lighting_view.dart';
 import 'devices_view.dart';
 import 'ppp_connection_dialog.dart';
+import 'esp32_provisioning_dialog.dart';
 import 'login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -30,6 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = widget.controller.tr;
+    final isAr = widget.controller.isArabic;
 
     return ListenableBuilder(
       listenable: widget.controller,
@@ -61,7 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,7 +72,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Text(
                         '${tr('hi_user')} ${user.name.split(" ").first}',
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 17,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimary,
                         ),
@@ -89,6 +91,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
+                ),
+
+                // ESP32 Provisioning Button
+                IconButton(
+                  tooltip: isAr ? 'إضافة جهاز ESP32' : 'Provision ESP32 Node',
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentAmber.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.accentAmber.withValues(alpha: 0.4)),
+                    ),
+                    child: const Icon(Icons.memory_rounded, color: AppTheme.accentAmber, size: 18),
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => Esp32ProvisioningDialog(controller: widget.controller),
+                    );
+                  },
                 ),
 
                 // Language Selector Button
@@ -112,7 +134,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   onPressed: () => widget.controller.toggleLanguage(),
                 ),
-                const SizedBox(width: 4),
 
                 // PPP Gateway Status Button
                 InkWell(
