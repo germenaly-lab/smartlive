@@ -1,11 +1,11 @@
 class AppTranslations {
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
-      'app_name': 'Smart Life',
-      'ppp_system_control': 'PPP SYSTEM CONTROL',
+      'app_name': 'smartlive60',
+      'ppp_system_control': 'SMART CONTROL SYSTEM',
       'app_desc': 'Personalized Smart Home management platform for automated lighting, environment, and smart appliances.',
       'auth_required': 'Authentication Required',
-      'auth_desc': 'Sign in with your Google account to access your PPP Home Gateway.',
+      'auth_desc': 'Sign in with your Google account to access your Smart Gateway.',
       'google_signin': 'Sign in with Google',
       'smart_lights': 'Smart Lights',
       'climate_ppp': 'Climate PPP',
@@ -88,11 +88,11 @@ class AppTranslations {
       'mon': 'Mon', 'tue': 'Tue', 'wed': 'Wed', 'thu': 'Thu', 'fri': 'Fri', 'sat': 'Sat', 'sun': 'Sun',
     },
     'ar': {
-      'app_name': 'سمارت لايف',
-      'ppp_system_control': 'نظام التحكم PPP',
+      'app_name': 'سمارت لايف 60',
+      'ppp_system_control': 'نظام التحكم الذكي',
       'app_desc': 'منصة إدارة المنزل الذكي المخصصة للإضاءة والأجهزة والمناخ.',
       'auth_required': 'المصادقة مطلوبة',
-      'auth_desc': 'سجّل الدخول بحسابك في جوجل للوصول إلى بوابة PPP الذكية.',
+      'auth_desc': 'سجّل الدخول بحسابك في جوجل للوصول إلى البوابة الذكية.',
       'google_signin': 'تسجيل الدخول باستخدام جوجل',
       'smart_lights': 'إضاءة ذكية',
       'climate_ppp': 'تكييف PPP',

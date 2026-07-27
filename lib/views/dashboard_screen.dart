@@ -233,7 +233,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
-          body: Column(
+          body: Container(
+            decoration: AppTheme.logoBackgroundDecoration,
+            child: Column(
             children: [
               // Traveling Mode Banner (if active)
               if (isRemote)
@@ -343,6 +345,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
+        ),
 
           // Bottom Navigation Bar
           bottomNavigationBar: Container(

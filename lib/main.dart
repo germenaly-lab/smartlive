@@ -38,7 +38,7 @@ class _SmartLifeAppState extends State<SmartLifeApp> {
       listenable: _controller,
       builder: (context, _) {
         return MaterialApp(
-          title: 'Smart Life - PPP Control System',
+          title: 'smartlive60',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
           locale: Locale(_controller.currentLanguage, ''),
