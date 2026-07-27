@@ -10,13 +10,13 @@
  *    - Creates AP "PPP-SmartHome-Setup" (192.168.4.1) if no Wi-Fi credentials saved.
  *    - Captive Portal & REST API (/api/wifi-setup) to receive SSID & Password from mobile app.
  *    - Saves Wi-Fi & PPP Gateway config to NVS (Preferences) persistently.
- * 2. Hardware Control:
+ * 2. Hardware Control & Visual Feedback:
  *    - 4x Relay Output Channels (Lights, AC, Smart Lock, Plugs).
+ *    - Onboard LED Pulse/Flash feedback on EVERY command received.
  *    - Factory Reset Button (Hold GPIO 0 for 5s to clear Wi-Fi & re-enter AP Mode).
- *    - Status LED Indicator (GPIO 2).
- * 3. Telemetry & Communications:
- *    - REST API & WebSockets connection to PPP Gateway (192.168.1.120).
- *    - mDNS responder ("ppp-node.local").
+ * 3. Serial Monitor Terminal (115200 Baud):
+ *    - Real-time formatted command logging printed to Serial Monitor.
+ *    - Interactive Serial Terminal: Type '1'..'4' to toggle relays, 'STATUS' for state.
  * =================================================================================
  */
 
@@ -61,14 +61,17 @@ void handleWifiSetup();
 void handleGetStatus();
 void handleToggleRelay();
 void checkResetButton();
+void checkSerialCommands();
+void flashStatusLed(int count = 2);
+void printSystemStatus();
 
 void setup() {
   Serial.begin(115200);
   delay(500);
 
-  Serial.println("\n-------------------------------------------");
-  Serial.println("   PPP Smart Home System — ESP32 Node");
-  Serial.println("-------------------------------------------");
+  Serial.println("\n==================================================");
+  Serial.println("    PPP SMART HOME SYSTEM — ESP32 NODE FIRMWARE");
+  Serial.println("==================================================");
 
   // Initialize GPIO Pins
   pinMode(STATUS_LED_PIN, OUTPUT);
@@ -83,6 +86,9 @@ void setup() {
   digitalWrite(RELAY_2_PIN, HIGH);
   digitalWrite(RELAY_3_PIN, HIGH);
   digitalWrite(RELAY_4_PIN, HIGH);
+
+  // Initial LED Blink test
+  flashStatusLed(3);
 
   // Load Saved Wi-Fi Credentials from NVS
   preferences.begin("ppp_config", false);
@@ -103,6 +109,7 @@ void setup() {
 
 void loop() {
   checkResetButton();
+  checkSerialCommands();
 
   if (isApMode) {
     dnsServer.processNextRequest();
@@ -131,6 +138,16 @@ void loop() {
   }
 }
 
+// --- Visual LED Flash Feedback on Command ---
+void flashStatusLed(int count) {
+  for (int i = 0; i < count; i++) {
+    digitalWrite(STATUS_LED_PIN, LOW);
+    delay(50);
+    digitalWrite(STATUS_LED_PIN, HIGH);
+    delay(50);
+  }
+}
+
 // --- Start Access Point (Provisioning Mode) ---
 void startApMode() {
   isApMode = true;
@@ -144,9 +161,11 @@ void startApMode() {
   setupRoutes();
   server.begin();
 
+  Serial.println("\n==================================================");
   Serial.println("[AP MODE] SoftAP Started!");
   Serial.print("[AP MODE] SSID: PPP-SmartHome-Setup | IP: ");
   Serial.println(WiFi.softAPIP());
+  Serial.println("==================================================");
 }
 
 // --- Start Station Mode (Connected to Home Wi-Fi) ---
@@ -163,14 +182,24 @@ void startStationMode() {
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n[STA MODE] Wi-Fi Connected Successfully!");
-    Serial.print("[STA MODE] IP Address: ");
+    Serial.println("\n==================================================");
+    Serial.println("  [STA MODE] CONNECTED TO WI-FI SUCCESSFULLY!");
+    Serial.print("  [IP ADDRESS] : ");
     Serial.println(WiFi.localIP());
+    Serial.print("  [SIGNAL RSSI]: ");
+    Serial.print(WiFi.RSSI());
+    Serial.println(" dBm");
 
     // Start mDNS Responder
     if (MDNS.begin("ppp-node")) {
-      Serial.println("[mDNS] Hostname: http://ppp-node.local");
+      Serial.println("  [mDNS URL]   : http://ppp-node.local");
     }
+    Serial.println("--------------------------------------------------");
+    Serial.println("  [SERIAL MONITOR COMMANDS ACTIVE (115200 Baud)]:");
+    Serial.println("    - Type '1'..'4' to toggle Relay channels 1-4");
+    Serial.println("    - Type 'STATUS' to print device state");
+    Serial.println("    - Type 'RESET' to clear Wi-Fi credentials");
+    Serial.println("==================================================\n");
 
     setupRoutes();
     server.begin();
@@ -182,11 +211,11 @@ void startStationMode() {
 
 // --- Web Server API Routes ---
 void setupRoutes() {
-  // CORS Headers
   server.enableCORS(true);
 
   // Captive Portal / Root Page
   server.on("/", HTTP_GET, []() {
+    flashStatusLed(2);
     String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1'>"
                   "<style>body{font-family:Arial;background:#0d1117;color:#fff;text-align:center;padding:20px;}"
                   ".card{background:#161b22;padding:20px;border-radius:16px;max-width:350px;margin:0 auto;border:1px solid #30363d;}"
@@ -205,6 +234,7 @@ void setupRoutes() {
 
   // Provisioning Endpoint (Form POST)
   server.on("/setup", HTTP_POST, []() {
+    flashStatusLed(3);
     String ssid = server.arg("ssid");
     String pass = server.arg("pass");
     String gateway = server.arg("gateway");
@@ -213,6 +243,10 @@ void setupRoutes() {
       preferences.putString("ssid", ssid);
       preferences.putString("pass", pass);
       if (gateway.length() > 0) preferences.putString("gateway", gateway);
+
+      Serial.println("\n[SETUP] New Wi-Fi Credentials Received from Web Form!");
+      Serial.print("[SETUP] SSID: ");
+      Serial.println(ssid);
 
       server.send(200, "text/html", "<h3>Credentials Saved! Rebooting ESP32...</h3>");
       delay(1500);
@@ -234,6 +268,7 @@ void setupRoutes() {
 
 // --- JSON Wi-Fi Setup API Handler ---
 void handleWifiSetup() {
+  flashStatusLed(3);
   if (server.hasArg("plain") == false) {
     server.send(400, "application/json", "{\"error\":\"No JSON body\"}");
     return;
@@ -253,6 +288,12 @@ void handleWifiSetup() {
   String gateway = doc["gateway"];
   String apikey = doc["apiKey"];
 
+  Serial.println("\n==========================================");
+  Serial.println("  [APP PROVISIONING] JSON Wi-Fi Setup Received!");
+  Serial.print("  [SSID]   : "); Serial.println(ssid);
+  Serial.print("  [GATEWAY]: "); Serial.println(gateway);
+  Serial.println("==========================================");
+
   preferences.putString("ssid", ssid);
   preferences.putString("pass", pass);
   if (gateway != "") preferences.putString("gateway", gateway);
@@ -265,6 +306,7 @@ void handleWifiSetup() {
 
 // --- Status API Handler ---
 void handleGetStatus() {
+  flashStatusLed(1);
   StaticJsonDocument<256> doc;
   doc["node"] = "PPP-ESP32-Node-01";
   doc["ip"] = WiFi.localIP().toString();
@@ -281,23 +323,78 @@ void handleGetStatus() {
 
 // --- Relay Control Handler ---
 void handleToggleRelay() {
+  flashStatusLed(2); // LED pulse on command
   if (server.hasArg("id") && server.hasArg("state")) {
     int id = server.arg("id").toInt();
     int state = server.arg("state").toInt(); // 1 = ON, 0 = OFF
 
     int pin = -1;
-    if (id == 1) pin = RELAY_1_PIN;
-    if (id == 2) pin = RELAY_2_PIN;
-    if (id == 3) pin = RELAY_3_PIN;
-    if (id == 4) pin = RELAY_4_PIN;
+    String name = "";
+    if (id == 1) { pin = RELAY_1_PIN; name = "Chandelier Light"; }
+    if (id == 2) { pin = RELAY_2_PIN; name = "LED Wall Strip"; }
+    if (id == 3) { pin = RELAY_3_PIN; name = "HVAC AC Compressor"; }
+    if (id == 4) { pin = RELAY_4_PIN; name = "Main Entrance Lock"; }
 
     if (pin != -1) {
       digitalWrite(pin, state == 1 ? LOW : HIGH); // Active LOW relay
+
+      Serial.println("\n==========================================");
+      Serial.print("  [HTTP COMMAND] Relay Channel: "); Serial.print(id);
+      Serial.print(" ("); Serial.print(name); Serial.println(")");
+      Serial.print("  [NEW STATE]   : "); Serial.println(state == 1 ? "ON (ACTIVE)" : "OFF (INACTIVE)");
+      Serial.print("  [GPIO PIN]    : GPIO "); Serial.print(pin);
+      Serial.println(state == 1 ? " -> LOW" : " -> HIGH");
+      Serial.println("==========================================");
+
       server.send(200, "application/json", "{\"status\":\"success\"}");
       return;
     }
   }
   server.send(400, "application/json", "{\"error\":\"Invalid arguments\"}");
+}
+
+// --- Interactive Serial Terminal Reader ---
+void checkSerialCommands() {
+  if (Serial.available() > 0) {
+    String input = Serial.readStringUntil('\n');
+    input.trim();
+    input.toUpperCase();
+
+    if (input == "1" || input == "2" || input == "3" || input == "4") {
+      int ch = input.toInt();
+      int pin = (ch == 1) ? RELAY_1_PIN : ((ch == 2) ? RELAY_2_PIN : ((ch == 3) ? RELAY_3_PIN : RELAY_4_PIN));
+      bool currState = (digitalRead(pin) == LOW); // LOW = ON
+      digitalWrite(pin, currState ? HIGH : LOW);
+
+      flashStatusLed(3);
+      Serial.println("\n==========================================");
+      Serial.print("  [SERIAL TERMINAL TOGGLE] Relay "); Serial.println(ch);
+      Serial.print("  [NEW STATE] : "); Serial.println(!currState ? "ON (ACTIVE)" : "OFF (INACTIVE)");
+      Serial.println("==========================================");
+    } else if (input == "STATUS" || input == "INFO") {
+      printSystemStatus();
+    } else if (input == "RESET") {
+      Serial.println("[RESET] Manual Serial Reset Requested! Clearing NVS...");
+      preferences.clear();
+      flashStatusLed(5);
+      ESP.restart();
+    }
+  }
+}
+
+// --- Print System Status Summary to Serial ---
+void printSystemStatus() {
+  flashStatusLed(1);
+  Serial.println("\n==========================================");
+  Serial.println("            ESP32 NODE SYSTEM STATUS      ");
+  Serial.println("==========================================");
+  Serial.print("  [MODE]       : "); Serial.println(isApMode ? "SoftAP Setup" : "Wi-Fi Station");
+  Serial.print("  [IP ADDRESS] : "); Serial.println(isApMode ? WiFi.softAPIP().toString() : WiFi.localIP().toString());
+  Serial.print("  [RELAY 1]    : "); Serial.println(digitalRead(RELAY_1_PIN) == LOW ? "ON" : "OFF");
+  Serial.print("  [RELAY 2]    : "); Serial.println(digitalRead(RELAY_2_PIN) == LOW ? "ON" : "OFF");
+  Serial.print("  [RELAY 3]    : "); Serial.println(digitalRead(RELAY_3_PIN) == LOW ? "ON" : "OFF");
+  Serial.print("  [RELAY 4]    : "); Serial.println(digitalRead(RELAY_4_PIN) == LOW ? "ON" : "OFF");
+  Serial.println("==========================================\n");
 }
 
 // --- Factory Reset Button Handler (Press & Hold 5 Seconds) ---
